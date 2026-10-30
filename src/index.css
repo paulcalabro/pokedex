@@ -30,6 +30,30 @@
   transition: transform 0.5s ease-out;
 }
 
+.holo-card.official {
+  padding: 0;
+  max-height: none;
+  overflow: hidden;
+  border: none;
+  border-radius: 4.5% / 3.2%;
+  background: transparent;
+}
+
+.holo-card.official .holo-shine {
+  opacity: 0.55;
+}
+
+.stats-panel {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s 0.5s, transform 0.5s 0.5s;
+}
+
+.stats-panel.is-open {
+  opacity: 1;
+  transform: none;
+}
+
 .holo-shine {
   pointer-events: none;
   position: absolute;
@@ -59,6 +83,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .holo-card,
+  .stats-panel,
   .stat-bar,
   .float-art {
     transition: none;
