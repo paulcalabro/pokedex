@@ -21,3 +21,12 @@ create policy "Users update own cards" on public.cards
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users delete own cards" on public.cards
   for delete using (auth.uid() = user_id);
+
+-- Existing projects: run only this section to add quantity, condition and official card data.
+alter table public.cards add column if not exists quantity integer not null default 1 check (quantity between 1 and 999);
+alter table public.cards add column if not exists condition text not null default 'Near Mint' check (condition in ('Mint','Near Mint','Good','Played'));
+alter table public.cards add column if not exists tcg_id text;
+alter table public.cards add column if not exists set_name text;
+alter table public.cards add column if not exists card_number text;
+alter table public.cards add column if not exists official_rarity text;
+alter table public.cards add column if not exists image_url text;

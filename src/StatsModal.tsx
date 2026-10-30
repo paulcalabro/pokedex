@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react'
 import { TYPES, type Card } from './cards'
+import OfficialPicker from './OfficialPicker'
 import { RARITY_STYLE, usePokemon } from './pokemon'
 
-export default function StatsModal({ card, sprite, onClose }: { card: Card; sprite: (id: number) => string; onClose: () => void }) {
+export default function StatsModal({
+  card,
+  sprite,
+  onClose,
+  onUpdate,
+}: {
+  card: Card
+  sprite: (id: number) => string
+  onClose: () => void
+  onUpdate: (patch: Partial<Card>) => void
+}) {
   const { info, loading } = usePokemon(card.name)
   const [shown, setShown] = useState(false)
   const [tilt, setTilt] = useState({ x: 0, y: 0, mx: 50, my: 50 })
@@ -63,6 +74,9 @@ export default function StatsModal({ card, sprite, onClose }: { card: Card; spri
               {rarity.symbol} {info.rarity}
             </p>
           )}
+          {card.official?.rarity && (
+            <p className="text-xs text-slate-300 mb-1">Official card rarity: {card.official.rarity}</p>
+          )}
 
           {info && (
             <img
@@ -105,6 +119,7 @@ export default function StatsModal({ card, sprite, onClose }: { card: Card; spri
               </p>
             </>
           )}
+          <OfficialPicker name={card.name} current={card.official} onPick={(official) => onUpdate({ official })} />
         </div>
       </div>
     </div>
