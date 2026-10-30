@@ -21,6 +21,15 @@ Cards are stored per user in Supabase Postgres with row-level security. Sign-in 
 4. Locally, copy `.env.example` to `.env.local` and fill in the project URL and anon key.
 5. For deployment, add repo **variables** (Settings → Secrets and variables → Actions → Variables) `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The anon key is public by design; row-level security protects the data.
 
+## Features
+
+- Quantity and condition (Mint / Near Mint / Good / Played) per card.
+- Official card art, set, number and rarity from the Pokémon TCG API (open a card, then **Pick the official card**).
+- Binder view: 3×3 pages with empty slots; "Want it" cards appear faded.
+- Kanto Pokédex progress bar with milestone badges.
+
+Existing Supabase projects need the new columns: run the last section of `supabase/schema.sql`.
+
 ## Deploy
 
 Pushing to `main` deploys to GitHub Pages via `.github/workflows/deploy.yml`

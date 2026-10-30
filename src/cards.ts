@@ -17,19 +17,73 @@ export type CardType = keyof typeof TYPES
 export const STATUSES = ['Got it', 'Want it', 'Trade'] as const
 export type Status = (typeof STATUSES)[number]
 
+export const CONDITIONS = ['Mint', 'Near Mint', 'Good', 'Played'] as const
+export type Condition = (typeof CONDITIONS)[number]
+
+// A specific printed card chosen from the Pokémon TCG API.
+export interface Official {
+  id: string
+  setName: string
+  number: string
+  rarity: string | null
+  image: string
+}
+
 export interface Card {
   id: string
   name: string
   type: CardType
   status: Status
   favorite: boolean
+  quantity: number
+  condition: Condition
+  official: Official | null
+}
+
+const COLUMNS = 'id,name,type,status,favorite,quantity,condition,tcg_id,set_name,card_number,official_rarity,image_url'
+
+type Row = Record<string, unknown>
+
+function fromRow(r: Row): Card {
+  return {
+    id: r.id as string,
+    name: r.name as string,
+    type: r.type as CardType,
+    status: r.status as Status,
+    favorite: r.favorite as boolean,
+    quantity: (r.quantity as number) ?? 1,
+    condition: (r.condition as Condition) ?? 'Near Mint',
+    official: r.tcg_id
+      ? {
+          id: r.tcg_id as string,
+          setName: r.set_name as string,
+          number: r.card_number as string,
+          rarity: (r.official_rarity as string | null) ?? null,
+          image: r.image_url as string,
+        }
+      : null,
+  }
+}
+
+function toRow(c: Partial<Card>): Row {
+  const row: Row = { ...c }
+  delete row.official
+  if ('official' in c) {
+    row.tcg_id = c.official?.id ?? null
+    row.set_name = c.official?.setName ?? null
+    row.card_number = c.official?.number ?? null
+    row.official_rarity = c.official?.rarity ?? null
+    row.image_url = c.official?.image ?? null
+  }
+  return row
 }
 
 const KEY = 'pokedex-cards'
 
 function loadLocal(): Card[] {
   try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '[]')
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? '[]') as Partial<Card>[]
+    return saved.map((c) => ({ quantity: 1, condition: 'Near Mint', official: null, ...c }) as Card)
   } catch {
     return []
   }
@@ -63,12 +117,12 @@ export function useCards(session: Session | null) {
     let cancelled = false
     supabase!
       .from('cards')
-      .select('id,name,type,status,favorite')
+      .select(COLUMNS)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (cancelled) return
         if (error) setError(error.message)
-        else setCards(data as Card[])
+        else setCards((data as Row[]).map(fromRow))
       })
     return () => {
       cancelled = true
@@ -83,10 +137,19 @@ export function useCards(session: Session | null) {
 
   const add = useCallback(
     async (name: string, type: CardType, status: Status) => {
-      const card: Card = { id: crypto.randomUUID(), name, type, status, favorite: false }
+      const card: Card = {
+        id: crypto.randomUUID(),
+        name,
+        type,
+        status,
+        favorite: false,
+        quantity: 1,
+        condition: 'Near Mint',
+        official: null,
+      }
       setCards((cs) => [card, ...cs])
       if (remote) {
-        const { error } = await supabase!.from('cards').insert({ ...card, user_id: session!.user.id })
+        const { error } = await supabase!.from('cards').insert({ ...toRow(card), user_id: session!.user.id })
         if (error) {
           setCards((cs) => cs.filter((c) => c.id !== card.id))
           fail(error.message)
@@ -107,7 +170,7 @@ export function useCards(session: Session | null) {
         }),
       )
       if (remote) {
-        const { error } = await supabase!.from('cards').update(patch).eq('id', id)
+        const { error } = await supabase!.from('cards').update(toRow(patch)).eq('id', id)
         if (error) {
           setCards((cs) => cs.map((c) => (c.id === id && previous ? previous : c)))
           fail(error.message)
