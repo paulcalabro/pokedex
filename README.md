@@ -26,7 +26,7 @@ Cards are stored per user in Supabase Postgres with row-level security. Sign-in 
 - Quantity and condition (Mint / Near Mint / Good / Played) per card.
 - Official card art, set, number and rarity from the Pokémon TCG API, with TCGdex as a fallback (open a card, then **Pick the official card**).
 - Binder view: 3×3 pages with empty slots; "Want it" cards appear faded.
-- Kanto Pokédex progress bar with milestone badges.
+- Overall Pokédex progress and regional breakdowns with milestone badges, covering every species in the PokéAPI species list.
 - Export the full collection as a JSON backup and import it later; imported cards are added without replacing existing cards.
 
 Existing Supabase projects need the new columns: run the last section of `supabase/schema.sql`.
