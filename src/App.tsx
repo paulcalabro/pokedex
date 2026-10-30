@@ -36,6 +36,59 @@ const COLORS: Record<CardType, string> = {
 
 const KEY = 'pokedex-cards'
 
+// Sprites are loaded from the community PokéAPI project; nothing is bundled here.
+const SPRITE = (id: number) =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
+const STARTERS = [
+  { id: 1, name: 'Bulbasaur' },
+  { id: 4, name: 'Charmander' },
+  { id: 25, name: 'Pikachu' },
+  { id: 7, name: 'Squirtle' },
+  { id: 133, name: 'Eevee' },
+]
+
+function Pokeball({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} aria-hidden>
+      <circle cx="50" cy="50" r="46" fill="#fff" stroke="#111" strokeWidth="6" />
+      <path d="M4 50a46 46 0 0 1 92 0z" fill="#ef4444" stroke="#111" strokeWidth="6" />
+      <path d="M4 50h92" stroke="#111" strokeWidth="8" />
+      <circle cx="50" cy="50" r="13" fill="#fff" stroke="#111" strokeWidth="6" />
+    </svg>
+  )
+}
+
+function useSpriteId(name: string) {
+  const [id, setId] = useState<number | null>(null)
+  useEffect(() => {
+    const slug = name.trim().toLowerCase().replace(/\s+/g, '-')
+    const ctrl = new AbortController()
+    fetch(`https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(slug)}`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setId(d?.id ?? null))
+      .catch(() => {})
+    return () => ctrl.abort()
+  }, [name])
+  return id
+}
+
+function CardArt({ name, type }: { name: string; type: CardType }) {
+  const id = useSpriteId(name)
+  const [failed, setFailed] = useState(false)
+  if (id === null || failed) {
+    return <span className="text-5xl block h-24 text-center leading-[6rem]" aria-hidden>{TYPES[type]}</span>
+  }
+  return (
+    <img
+      src={SPRITE(id)}
+      alt={name}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-24 w-full object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.6)]"
+    />
+  )
+}
+
 function load(): Card[] {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? '[]')
@@ -86,7 +139,15 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-slate-900 text-slate-200 p-4 sm:p-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="text-4xl font-extrabold text-slate-100 text-center mb-1">📒 My Card Binder</h1>
+        <div className="flex items-center justify-center gap-3 mb-1">
+          <Pokeball className="h-10 w-10" />
+          <h1 className="text-4xl font-extrabold text-slate-100">My Pokédex Binder</h1>
+        </div>
+        <div className="flex justify-center gap-2 mb-3">
+          {STARTERS.map((p) => (
+            <img key={p.id} src={SPRITE(p.id)} alt={p.name} className="h-16 w-16 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.6)]" />
+          ))}
+        </div>
         <p className="text-center text-slate-400 mb-6">
           Keep track of your Pokémon cards! {cards.length} card{cards.length === 1 ? '' : 's'} so far.
         </p>
@@ -138,7 +199,7 @@ export default function App() {
             {shown.map((c) => (
               <li key={c.id} className={`rounded-2xl border-4 p-3 shadow-lg shadow-black/50 ${COLORS[c.type]}`}>
                 <div className="flex justify-between">
-                  <span className="text-3xl" aria-hidden>{TYPES[c.type]}</span>
+                  <span className="text-2xl" aria-hidden>{TYPES[c.type]}</span>
                   <button
                     aria-label={c.favorite ? `Unfavorite ${c.name}` : `Favorite ${c.name}`}
                     onClick={() => update(c.id, { favorite: !c.favorite })}
@@ -147,6 +208,7 @@ export default function App() {
                     {c.favorite ? '❤️' : '🤍'}
                   </button>
                 </div>
+                <CardArt name={c.name} type={c.type} />
                 <h2 className="font-bold text-lg break-words">{c.name}</h2>
                 <p className="text-sm mb-2">{c.type}</p>
                 <select
@@ -168,8 +230,9 @@ export default function App() {
           </ul>
         )}
 
-        <p className="text-center text-xs text-slate-500 mt-10">
-          Fan-made organizer. Pokémon is a trademark of Nintendo, Game Freak and The Pokémon Company. Your cards are saved only in this browser.
+        <Pokeball className="h-8 w-8 mx-auto mt-10 opacity-60" />
+        <p className="text-center text-xs text-slate-500 mt-2">
+          Fan-made organizer. Pokémon is a trademark of Nintendo, Game Freak and The Pokémon Company. Pokémon art loaded from PokéAPI. Your cards are saved only in this browser.
         </p>
       </div>
     </div>
