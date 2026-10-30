@@ -32,17 +32,9 @@ export default function OfficialPicker({
   return (
     <div className="mt-3 border-t border-white/10 pt-3 text-sm">
       {current ? (
-        <div className="flex gap-3 items-start">
-          <img src={current.image} alt={`${name} official card`} className="w-20 rounded" />
-          <div className="flex-1 text-slate-300">
-            <p className="font-bold">{current.setName}</p>
-            <p>#{current.number}</p>
-            <p>{current.rarity ?? 'Rarity unknown'}</p>
-            <button className="underline text-slate-400 hover:text-white mt-1" onClick={() => onPick(null)}>
-              Remove official card
-            </button>
-          </div>
-        </div>
+        <button className="underline text-slate-400 hover:text-white" onClick={() => onPick(null)}>
+          Remove official card ({current.setName} #{current.number})
+        </button>
       ) : (
         <button className="underline text-slate-300 hover:text-white" onClick={() => setOpen((o) => !o)}>
           {open ? 'Hide official cards' : '🃏 Pick the official card'}
