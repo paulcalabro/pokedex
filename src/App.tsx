@@ -24,14 +24,14 @@ interface Card {
 }
 
 const COLORS: Record<CardType, string> = {
-  Fire: 'bg-orange-200 border-orange-400',
-  Water: 'bg-sky-200 border-sky-400',
-  Grass: 'bg-green-200 border-green-400',
-  Electric: 'bg-yellow-200 border-yellow-400',
-  Psychic: 'bg-purple-200 border-purple-400',
-  Fighting: 'bg-red-200 border-red-400',
-  Normal: 'bg-stone-200 border-stone-400',
-  Dragon: 'bg-indigo-200 border-indigo-400',
+  Fire: 'bg-zinc-800 border-orange-500',
+  Water: 'bg-zinc-800 border-sky-500',
+  Grass: 'bg-zinc-800 border-green-500',
+  Electric: 'bg-zinc-800 border-yellow-400',
+  Psychic: 'bg-zinc-800 border-purple-500',
+  Fighting: 'bg-zinc-800 border-red-500',
+  Normal: 'bg-zinc-800 border-slate-400',
+  Dragon: 'bg-zinc-800 border-indigo-500',
 }
 
 const KEY = 'pokedex-cards'
@@ -81,17 +81,17 @@ export default function App() {
   const update = (id: string, patch: Partial<Card>) =>
     setCards(cards.map((c) => (c.id === id ? { ...c, ...patch } : c)))
 
-  const field = 'rounded-xl border-2 border-yellow-400 px-3 py-2 bg-white'
+  const field = 'rounded-xl border-2 border-zinc-600 px-3 py-2 bg-zinc-800 text-slate-100 placeholder:text-slate-500 focus:border-slate-300 outline-none'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-100 to-yellow-100 p-4 sm:p-8">
+    <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-slate-900 text-slate-200 p-4 sm:p-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="text-4xl font-extrabold text-red-600 text-center mb-1">📒 My Card Binder</h1>
-        <p className="text-center text-slate-600 mb-6">
+        <h1 className="text-4xl font-extrabold text-slate-100 text-center mb-1">📒 My Card Binder</h1>
+        <p className="text-center text-slate-400 mb-6">
           Keep track of your Pokémon cards! {cards.length} card{cards.length === 1 ? '' : 's'} so far.
         </p>
 
-        <form onSubmit={add} className="flex flex-wrap gap-2 bg-white/70 rounded-2xl p-4 mb-4">
+        <form onSubmit={add} className="flex flex-wrap gap-2 bg-zinc-900/80 border border-zinc-700 rounded-2xl p-4 mb-4">
           <input
             className={`${field} flex-1 min-w-40`}
             placeholder="Card name (like Pikachu)"
@@ -108,7 +108,7 @@ export default function App() {
           <select className={field} aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value as Status)}>
             {STATUSES.map((s) => <option key={s}>{s}</option>)}
           </select>
-          <button className="rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2">
+          <button className="rounded-xl bg-slate-300 hover:bg-white text-zinc-950 font-bold px-5 py-2">
             Add card
           </button>
         </form>
@@ -130,13 +130,13 @@ export default function App() {
         </div>
 
         {shown.length === 0 ? (
-          <p className="text-center text-slate-500 py-10">
+          <p className="text-center text-slate-400 py-10">
             {cards.length === 0 ? 'Your binder is empty. Add your first card!' : 'No cards match. Try a different search.'}
           </p>
         ) : (
           <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {shown.map((c) => (
-              <li key={c.id} className={`rounded-2xl border-4 p-3 shadow ${COLORS[c.type]}`}>
+              <li key={c.id} className={`rounded-2xl border-4 p-3 shadow-lg shadow-black/50 ${COLORS[c.type]}`}>
                 <div className="flex justify-between">
                   <span className="text-3xl" aria-hidden>{TYPES[c.type]}</span>
                   <button
@@ -150,7 +150,7 @@ export default function App() {
                 <h2 className="font-bold text-lg break-words">{c.name}</h2>
                 <p className="text-sm mb-2">{c.type}</p>
                 <select
-                  className="w-full rounded-lg bg-white/80 px-2 py-1 text-sm"
+                  className="w-full rounded-lg bg-zinc-900 text-slate-100 px-2 py-1 text-sm"
                   aria-label={`Status of ${c.name}`}
                   value={c.status}
                   onChange={(e) => update(c.id, { status: e.target.value as Status })}
@@ -158,7 +158,7 @@ export default function App() {
                   {STATUSES.map((s) => <option key={s}>{s}</option>)}
                 </select>
                 <button
-                  className="mt-2 text-xs underline text-slate-700"
+                  className="mt-2 text-xs underline text-slate-400 hover:text-slate-200"
                   onClick={() => confirm(`Remove ${c.name}?`) && setCards(cards.filter((x) => x.id !== c.id))}
                 >
                   Remove
