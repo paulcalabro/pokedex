@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
 import { useMemo, useState } from 'react'
 import { STATUSES, TYPES, useCards, useSession, type CardType, type Status } from './cards'
+import NameAutocomplete from './NameAutocomplete'
 import { RARITY_STYLE, usePokemon } from './pokemon'
 import SignIn from './SignIn'
 import StatsModal from './StatsModal'
@@ -153,14 +154,7 @@ function Binder({ session }: { session: Session | null }) {
         </p>
 
         <form onSubmit={add} className="flex flex-wrap gap-2 bg-zinc-900/80 border border-zinc-700 rounded-2xl p-4 mb-4">
-          <input
-            className={`${field} flex-1 min-w-40`}
-            placeholder="Card name (like Pikachu)"
-            aria-label="Card name"
-            value={name}
-            maxLength={40}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <NameAutocomplete value={name} onChange={setName} className={field} sprite={SPRITE} />
           <select className={field} aria-label="Type" value={type} onChange={(e) => setType(e.target.value as CardType)}>
             {Object.entries(TYPES).map(([t, e]) => (
               <option key={t} value={t}>{e} {t}</option>

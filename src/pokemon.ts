@@ -97,3 +97,24 @@ export function usePokemon(name: string) {
   const loading = state?.slug !== slug
   return { info: loading ? null : state!.info, loading }
 }
+
+export interface NameEntry {
+  id: number
+  name: string
+}
+
+let namesPromise: Promise<NameEntry[]> | null = null
+
+// One AJAX request for every Pokémon name; autocomplete then filters it locally.
+export function fetchPokemonNames(): Promise<NameEntry[]> {
+  namesPromise ??= fetch('https://pokeapi.co/api/v2/pokemon-species?limit=2000')
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((d: { results: { name: string; url: string }[] }) =>
+      d.results.map((p) => ({ name: p.name, id: Number(p.url.split('/').filter(Boolean).pop()) })),
+    )
+    .catch(() => {
+      namesPromise = null
+      return []
+    })
+  return namesPromise
+}
