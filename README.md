@@ -1,6 +1,6 @@
 # Pokédex Card Binder
 
-A kid-friendly Pokémon card organizer. Add cards, mark them **Got it / Want it / Trade**, favorite them, and search or filter your collection. Data is stored locally in the browser.
+A kid-friendly Pokémon card organizer. Add cards, mark them **Got it / Want it / Trade**, favorite them, and search or filter your collection. Cards are saved to your Supabase account when it is configured, otherwise locally in the browser (see [Database](#database-supabase)).
 
 Built with React, TypeScript, Vite and Tailwind CSS.
 
@@ -10,6 +10,10 @@ Built with React, TypeScript, Vite and Tailwind CSS.
 npm install
 npm run dev
 ```
+
+The dev server serves the app under `/pokedex/` (the Vite `base`), e.g. http://localhost:5173/pokedex/.
+
+Other scripts: `npm run build` (type-check with `tsc -b`, then `vite build`), `npm run lint` (oxlint) and `npm run preview`. CI builds with Node 22.
 
 ## Database (Supabase)
 
