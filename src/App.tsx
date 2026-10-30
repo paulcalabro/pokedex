@@ -48,7 +48,7 @@ function Shell({ children, signedIn, onSignOut }: { children: React.ReactNode; s
 
         <Pokeball className="h-8 w-8 mx-auto mt-10 opacity-60" />
         <p className="text-center text-xs text-slate-500 mt-2">
-          Fan-made organizer. Pokémon is a trademark of Nintendo, Game Freak and The Pokémon Company. Pokémon data from PokéAPI and the Pokémon TCG API.
+          Fan-made organizer. Pokémon is a trademark of Nintendo, Game Freak and The Pokémon Company. Pokémon data from PokéAPI, the Pokémon TCG API and TCGdex.
           {supabase ? ' Your cards are saved to your account.' : ' Your cards are saved only in this browser.'}
         </p>
         {signedIn && (

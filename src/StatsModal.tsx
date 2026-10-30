@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { TYPES, type Card } from './cards'
 import OfficialPicker from './OfficialPicker'
 import { RARITY_STYLE, usePokemon } from './pokemon'
-import { officialTier } from './tcg'
+import { largeImage, officialTier } from './tcg'
 
 export default function StatsModal({
   card,
@@ -72,7 +72,7 @@ export default function StatsModal({
             <>
               <div className={`holo-card official ${shown ? 'is-open' : ''}`} {...holoProps}>
                 <img
-                  src={hiresFailed ? official.image : official.image.replace(/\.png$/, '_hires.png')}
+                  src={hiresFailed ? official.image : largeImage(official.image)}
                   onError={() => setHiresFailed(true)}
                   alt={`${card.name} official card`}
                   className="block w-full"
