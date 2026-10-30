@@ -24,7 +24,7 @@ Cards are stored per user in Supabase Postgres with row-level security. Sign-in 
 ## Features
 
 - Quantity and condition (Mint / Near Mint / Good / Played) per card.
-- Official card art, set, number and rarity from the Pokémon TCG API (open a card, then **Pick the official card**).
+- Official card art, set, number and rarity from the Pokémon TCG API, with TCGdex as a fallback (open a card, then **Pick the official card**).
 - Binder view: 3×3 pages with empty slots; "Want it" cards appear faded.
 - Kanto Pokédex progress bar with milestone badges.
 
