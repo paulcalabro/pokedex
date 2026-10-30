@@ -13,6 +13,10 @@ create index if not exists cards_user_id_idx on public.cards (user_id);
 
 alter table public.cards enable row level security;
 
+-- Let signed-in users reach the table through the API; row-level security below limits them to their own rows.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.cards to authenticated;
+
 create policy "Users read own cards" on public.cards
   for select using (auth.uid() = user_id);
 create policy "Users insert own cards" on public.cards
