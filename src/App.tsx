@@ -1,27 +1,8 @@
+import type { Session } from '@supabase/supabase-js'
 import { useEffect, useMemo, useState } from 'react'
-
-const TYPES = {
-  Fire: '🔥',
-  Water: '💧',
-  Grass: '🌿',
-  Electric: '⚡',
-  Psychic: '🔮',
-  Fighting: '👊',
-  Normal: '⭐',
-  Dragon: '🐉',
-} as const
-type CardType = keyof typeof TYPES
-
-const STATUSES = ['Got it', 'Want it', 'Trade'] as const
-type Status = (typeof STATUSES)[number]
-
-interface Card {
-  id: string
-  name: string
-  type: CardType
-  status: Status
-  favorite: boolean
-}
+import { STATUSES, TYPES, useCards, useSession, type CardType, type Status } from './cards'
+import SignIn from './SignIn'
+import { supabase } from './supabase'
 
 const COLORS: Record<CardType, string> = {
   Fire: 'bg-zinc-800 border-orange-500',
@@ -34,8 +15,6 @@ const COLORS: Record<CardType, string> = {
   Dragon: 'bg-zinc-800 border-indigo-500',
 }
 
-const KEY = 'pokedex-cards'
-
 // Sprites are loaded from the community PokéAPI project; nothing is bundled here.
 const SPRITE = (id: number) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
@@ -46,6 +25,36 @@ const STARTERS = [
   { id: 7, name: 'Squirtle' },
   { id: 133, name: 'Eevee' },
 ]
+
+function Shell({ children, signedIn, onSignOut }: { children: React.ReactNode; signedIn: boolean; onSignOut: () => void }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-slate-900 text-slate-200 p-4 sm:p-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="flex items-center justify-center gap-3 mb-1">
+          <Pokeball className="h-10 w-10" />
+          <h1 className="text-4xl font-extrabold text-slate-100">My Pokédex Binder</h1>
+        </div>
+        <div className="flex justify-center gap-2 mb-3">
+          {STARTERS.map((p) => (
+            <img key={p.id} src={SPRITE(p.id)} alt={p.name} className="h-16 w-16 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.6)]" />
+          ))}
+        </div>
+        {children}
+
+        <Pokeball className="h-8 w-8 mx-auto mt-10 opacity-60" />
+        <p className="text-center text-xs text-slate-500 mt-2">
+          Fan-made organizer. Pokémon is a trademark of Nintendo, Game Freak and The Pokémon Company. Pokémon art loaded from PokéAPI.
+          {supabase ? ' Your cards are saved to your account.' : ' Your cards are saved only in this browser.'}
+        </p>
+        {signedIn && (
+          <p className="text-center mt-2">
+            <button className="text-xs underline text-slate-400 hover:text-slate-200" onClick={onSignOut}>Sign out</button>
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function Pokeball({ className = '' }: { className?: string }) {
   return (
@@ -89,16 +98,21 @@ function CardArt({ name, type }: { name: string; type: CardType }) {
   )
 }
 
-function load(): Card[] {
-  try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '[]')
-  } catch {
-    return []
+export default function App() {
+  const { session, ready } = useSession()
+  if (!ready) return null
+  if (supabase && !session) {
+    return (
+      <Shell signedIn={false} onSignOut={() => {}}>
+        <SignIn />
+      </Shell>
+    )
   }
+  return <Binder session={session} />
 }
 
-export default function App() {
-  const [cards, setCards] = useState<Card[]>(load)
+function Binder({ session }: { session: Session | null }) {
+  const { cards, add: addCard, update, remove, error, clearError } = useCards(session)
   const [name, setName] = useState('')
   const [type, setType] = useState<CardType>('Normal')
   const [status, setStatus] = useState<Status>('Got it')
@@ -106,10 +120,6 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState<CardType | 'All'>('All')
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All')
   const [favsOnly, setFavsOnly] = useState(false)
-
-  useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(cards))
-  }, [cards])
 
   const shown = useMemo(
     () =>
@@ -127,27 +137,19 @@ export default function App() {
     e.preventDefault()
     const n = name.trim()
     if (!n) return
-    setCards([{ id: crypto.randomUUID(), name: n, type, status, favorite: false }, ...cards])
+    addCard(n, type, status)
     setName('')
   }
-
-  const update = (id: string, patch: Partial<Card>) =>
-    setCards(cards.map((c) => (c.id === id ? { ...c, ...patch } : c)))
 
   const field = 'rounded-xl border-2 border-zinc-600 px-3 py-2 bg-zinc-800 text-slate-100 placeholder:text-slate-500 focus:border-slate-300 outline-none'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-slate-900 text-slate-200 p-4 sm:p-8">
-      <div className="mx-auto max-w-4xl">
-        <div className="flex items-center justify-center gap-3 mb-1">
-          <Pokeball className="h-10 w-10" />
-          <h1 className="text-4xl font-extrabold text-slate-100">My Pokédex Binder</h1>
-        </div>
-        <div className="flex justify-center gap-2 mb-3">
-          {STARTERS.map((p) => (
-            <img key={p.id} src={SPRITE(p.id)} alt={p.name} className="h-16 w-16 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.6)]" />
-          ))}
-        </div>
+    <Shell onSignOut={() => supabase?.auth.signOut()} signedIn={!!session}>
+        {error && (
+          <p role="alert" className="text-red-400 text-sm text-center mb-3">
+            {error} <button className="underline" onClick={clearError}>Dismiss</button>
+          </p>
+        )}
         <p className="text-center text-slate-400 mb-6">
           Keep track of your Pokémon cards! {cards.length} card{cards.length === 1 ? '' : 's'} so far.
         </p>
@@ -221,7 +223,7 @@ export default function App() {
                 </select>
                 <button
                   className="mt-2 text-xs underline text-slate-400 hover:text-slate-200"
-                  onClick={() => confirm(`Remove ${c.name}?`) && setCards(cards.filter((x) => x.id !== c.id))}
+                  onClick={() => confirm(`Remove ${c.name}?`) && remove(c.id)}
                 >
                   Remove
                 </button>
@@ -230,11 +232,6 @@ export default function App() {
           </ul>
         )}
 
-        <Pokeball className="h-8 w-8 mx-auto mt-10 opacity-60" />
-        <p className="text-center text-xs text-slate-500 mt-2">
-          Fan-made organizer. Pokémon is a trademark of Nintendo, Game Freak and The Pokémon Company. Pokémon art loaded from PokéAPI. Your cards are saved only in this browser.
-        </p>
-      </div>
-    </div>
+    </Shell>
   )
 }
