@@ -43,6 +43,10 @@
   opacity: 0.55;
 }
 
+.holo-shine {
+  opacity: 0.55;
+}
+
 .stats-panel {
   opacity: 0;
   transform: translateY(16px);
@@ -83,7 +87,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .holo-card,
-  .stats-panel,
   .stat-bar,
   .float-art {
     transition: none;
