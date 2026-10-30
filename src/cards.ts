@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import type { BackupCard } from './backup'
 
 export const TYPES = {
   Fire: '🔥',
@@ -159,6 +160,24 @@ export function useCards(session: Session | null) {
     [remote, session],
   )
 
+  const importCards = useCallback(
+    async (cardsToImport: BackupCard[]) => {
+      const imported = cardsToImport.map((card) => ({ ...card, id: crypto.randomUUID() }))
+      if (remote) {
+        const { error } = await supabase!
+          .from('cards')
+          .insert(imported.map((card) => ({ ...toRow(card), user_id: session!.user.id })))
+        if (error) {
+          fail(error.message)
+          return false
+        }
+      }
+      setCards((cs) => [...imported, ...cs])
+      return true
+    },
+    [remote, session],
+  )
+
   const update = useCallback(
     async (id: string, patch: Partial<Card>) => {
       let previous: Card | undefined
@@ -198,5 +217,5 @@ export function useCards(session: Session | null) {
     [remote],
   )
 
-  return { cards, add, update, remove, error, clearError: () => setError(null) }
+  return { cards, add, importCards, update, remove, error, clearError: () => setError(null) }
 }
