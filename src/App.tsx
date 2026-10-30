@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import BinderView from './BinderView'
+import { createBackup, parseBackup } from './backup'
 import { CONDITIONS, STATUSES, TYPES, useCards, useSession, type Card, type CardType, type Condition, type Status } from './cards'
 import NameAutocomplete from './NameAutocomplete'
 import { RARITY_STYLE, usePokemon } from './pokemon'
@@ -117,7 +118,10 @@ export default function App() {
 }
 
 function Binder({ session }: { session: Session | null }) {
-  const { cards, add: addCard, update, remove, error, clearError } = useCards(session)
+  const { cards, add: addCard, importCards, update, remove, error, clearError } = useCards(session)
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ message: string; error: boolean } | null>(null)
   const [name, setName] = useState('')
   const [type, setType] = useState<CardType>('Normal')
   const [status, setStatus] = useState<Status>('Got it')
@@ -147,6 +151,40 @@ function Binder({ session }: { session: Session | null }) {
     if (!n) return
     addCard(n, type, status)
     setName('')
+  }
+
+  const exportCollection = () => {
+    const blob = new Blob([createBackup(cards)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `pokedex-binder-${new Date().toISOString().slice(0, 10)}.json`
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 0)
+  }
+
+  const importCollection = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const imported = parseBackup(await file.text())
+      if (await importCards(imported)) {
+        setImportResult({
+          message: `Added ${imported.length} card${imported.length === 1 ? '' : 's'} from backup. Existing cards were kept.`,
+          error: false,
+        })
+      }
+    } catch (e) {
+      setImportResult({
+        message: e instanceof Error ? `Import failed: ${e.message}` : 'Import failed. Please choose a valid backup file.',
+        error: true,
+      })
+    } finally {
+      setImporting(false)
+      e.target.value = ''
+    }
   }
 
   const field = 'rounded-xl border-2 border-zinc-600 px-3 py-2 bg-zinc-800 text-slate-100 placeholder:text-slate-500 focus:border-slate-300 outline-none'
@@ -206,6 +244,31 @@ function Binder({ session }: { session: Session | null }) {
             ))}
           </div>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <button
+            type="button"
+            className="rounded-xl border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-bold hover:bg-zinc-700"
+            onClick={exportCollection}
+          >
+            Export backup
+          </button>
+          <button
+            type="button"
+            className="rounded-xl border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-bold hover:bg-zinc-700 disabled:opacity-50"
+            onClick={() => fileInput.current?.click()}
+            disabled={importing}
+          >
+            {importing ? 'Importing…' : 'Import backup'}
+          </button>
+          <input ref={fileInput} type="file" accept=".json,application/json" className="sr-only" aria-label="Choose a JSON backup" onChange={importCollection} />
+          <span className="text-xs text-slate-400">Import adds each card separately; it won’t replace your collection.</span>
+        </div>
+        {importResult && (
+          <p role={importResult.error ? 'alert' : 'status'} className={`text-sm text-center mb-3 ${importResult.error ? 'text-red-400' : 'text-green-300'}`}>
+            {importResult.message}
+          </p>
+        )}
 
         {shown.length === 0 ? (
           <p className="text-center text-slate-400 py-10">
