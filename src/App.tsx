@@ -1,7 +1,9 @@
 import type { Session } from '@supabase/supabase-js'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { STATUSES, TYPES, useCards, useSession, type CardType, type Status } from './cards'
+import { RARITY_STYLE, usePokemon } from './pokemon'
 import SignIn from './SignIn'
+import StatsModal from './StatsModal'
 import { supabase } from './supabase'
 
 const COLORS: Record<CardType, string> = {
@@ -67,22 +69,16 @@ function Pokeball({ className = '' }: { className?: string }) {
   )
 }
 
-function useSpriteId(name: string) {
-  const [id, setId] = useState<number | null>(null)
-  useEffect(() => {
-    const slug = name.trim().toLowerCase().replace(/\s+/g, '-')
-    const ctrl = new AbortController()
-    fetch(`https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(slug)}`, { signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setId(d?.id ?? null))
-      .catch(() => {})
-    return () => ctrl.abort()
-  }, [name])
-  return id
+function RarityBadge({ name }: { name: string }) {
+  const { info } = usePokemon(name)
+  if (!info) return null
+  const r = RARITY_STYLE[info.rarity]
+  return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${r.badge}`}>{r.symbol} {info.rarity}</span>
 }
 
 function CardArt({ name, type }: { name: string; type: CardType }) {
-  const id = useSpriteId(name)
+  const { info } = usePokemon(name)
+  const id = info?.id ?? null
   const [failed, setFailed] = useState(false)
   if (id === null || failed) {
     return <span className="text-5xl block h-24 text-center leading-[6rem]" aria-hidden>{TYPES[type]}</span>
@@ -120,6 +116,8 @@ function Binder({ session }: { session: Session | null }) {
   const [typeFilter, setTypeFilter] = useState<CardType | 'All'>('All')
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All')
   const [favsOnly, setFavsOnly] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selected = cards.find((c) => c.id === selectedId)
 
   const shown = useMemo(
     () =>
@@ -210,9 +208,17 @@ function Binder({ session }: { session: Session | null }) {
                     {c.favorite ? '❤️' : '🤍'}
                   </button>
                 </div>
-                <CardArt name={c.name} type={c.type} />
-                <h2 className="font-bold text-lg break-words">{c.name}</h2>
-                <p className="text-sm mb-2">{c.type}</p>
+                <button
+                  className="block w-full text-left cursor-pointer transition-transform hover:scale-105"
+                  onClick={() => setSelectedId(c.id)}
+                  aria-label={`View stats for ${c.name}`}
+                >
+                  <CardArt name={c.name} type={c.type} />
+                  <h2 className="font-bold text-lg break-words">{c.name}</h2>
+                </button>
+                <p className="text-sm mb-2 flex items-center justify-between gap-1">
+                  {c.type} <RarityBadge name={c.name} />
+                </p>
                 <select
                   className="w-full rounded-lg bg-zinc-900 text-slate-100 px-2 py-1 text-sm"
                   aria-label={`Status of ${c.name}`}
@@ -232,6 +238,7 @@ function Binder({ session }: { session: Session | null }) {
           </ul>
         )}
 
+      {selected && <StatsModal card={selected} sprite={SPRITE} onClose={() => setSelectedId(null)} />}
     </Shell>
   )
 }
